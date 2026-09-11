@@ -9,6 +9,9 @@ openssl rand -hex 32 > godot.gdkey
 # use that key when building godot
 export SCRIPT_AES256_ENCRYPTION_KEY=$(cat godot.gdkey)
 
+# insure we don't have stale cache results when we rebuild
+rm .godot -r -f
+
 cd ..
 
 # remove the existing godot project if it exists
