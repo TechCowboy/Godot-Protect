@@ -20,8 +20,12 @@ rm godot -r -f
 # get the latest 4.7 branch
 gh repo clone godotengine/godot -- -b 4.7
 
+python godot/misc/scripts/install_accesskit.py
+
 # modify the fresh godot sources so they are secure
 python ../Godot-Secure/godot_secure.py godot/
+
+cd godot
 
 # build the linux project
 scons platform=linuxbsd target=editor use_mingw=yes 
