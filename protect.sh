@@ -26,7 +26,7 @@ cd godot
 python misc/scripts/install_accesskit.py
 
 # modify the fresh godot sources so they are secure
-python "./Godot-Secure/Godot Secure Scripts/universal/Godot Secure Camellia-256 Universal v6.py" godot
+python "./Godot-Secure/Godot Secure Scripts/universal/Godot Secure Camellia-256 Universal v6.py"
 
 scons --clean
 
