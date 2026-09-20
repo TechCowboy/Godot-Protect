@@ -12,16 +12,16 @@ Prerequistes:
     
 
 Set up your directory structure like this:<br>
-   eg.  Projects --- Godot-Protect<br>
-                  |--my_godot_project<br>
-                  |- Godot-Secure<br>
-                  |--godot<br>  
+&nbsp;&nbsp;&nbsp;eg.  Projects --- Godot-Protect<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|--my_godot_project<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|- Godot-Secure<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|--godot<br>  
        
 
         
 How to run:<br>
-    cd my_godot_project<br>
-    ..\Godot-Project\protech.sh<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cd my_godot_project<br>
+&nbsp;&nbsp;&nbsp;&nbsp;..\Godot-Project\protech.sh<br>
     
     
     
