@@ -1,17 +1,18 @@
+set +x
 #set -x
 
-read -p "Get fresh godot from github? (y/n)" REBUILD
+read -p "Get fresh Godot Engine Source from github? (y/n)" REBUILD
 
+export SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 export PROJECT_DIR="$(pwd)"
 echo Project directory is $PROJECT_DIR
-echo This will take about 45 minutes to complete
-
 
 export DATE="$(date '+%Y-%m-%d_%H-%M-%S')"
 
-export ENCRYPT_DIR="$PROJECT_DIR - $DATE"
+export ENCRYPT_DIR="$PROJECT_DIR-$DATE"
+export LOCAL_TEMPLATES="$ENCRYPT_DIR/templates"
 
-echo Copying your existing project into $DEST_DIR...
+echo Copying your existing project into $ENCRYPT_DIR...
 
 # backup the directory with the previous key
 cd ..
@@ -22,16 +23,19 @@ cp -R -d  "$PROJECT_DIR/." "$ENCRYPT_DIR/"
 cd "$ENCRYPT_DIR"
 
 if [ "$REBUILD" == "y" ]; then
+	echo This will take about 45 minutes to complete
 	# get randomized encryption key and store in project
 	openssl rand -hex 32 > godot.gdkey
 fi
 
 # use that key when building godot
 export SCRIPT_AES256_ENCRYPTION_KEY=$(cat godot.gdkey)
+echo Key is:
+echo $SCRIPT_AES256_ENCRYPTION_KEY
 
 if [ "$REBUILD" == "y" ]; then
 	# insure we don't have stale cache results when we rebuild
-	rm .godot -r -f
+	# rm .godot -r -f
 
 	cd ..
 
@@ -41,7 +45,6 @@ if [ "$REBUILD" == "y" ]; then
 	# get the latest 4.7 branch
 	gh repo clone godotengine/godot -- -b 4.7.2-stable
 	cd "$ENCRYPT_DIR"
-
 fi
 
 cd ..
@@ -57,58 +60,102 @@ if [ "$REBUILD" == "y" ] ; then
 
 	scons --clean
 
-	# build the linux project
+	# install the android templates
+	scons platform=android target=template_release arch=arm64 generate_apk=yes
+	scons platform=android target=template_debug arch=arm64 generate_apk=yes
+
+	# build the linux editor
 	scons platform=linuxbsd target=editor use_mingw=yes 
+	# build the windows editor
+	scons platform=windows  target=editor use_mingw=yes 
 
-	scons platform=windows target=template_debug use_mingw=yes
-	scons platform=windows target=template_release use_mingw=yes
-
+	# build the linux templates
 	scons platform=linux target=template_debug use_mingw=yes
 	scons platform=linux target=template_release use_mingw=yes
+
+	# build the windows editor
+	scons platform=windows target=template_debug arch=x86_64
+
+	# build the windows templates
+	scons platform=windows target=template_debug use_mingw=yes
+	scons platform=windows target=template_release use_mingw=yes
+	
+	
+
+	# prepare for reusing local templates  
+	cd bin
+	export TEMPLATE_DIR="$(pwd)"
+
+	rm ._sc_ -r -f
+	mkdir ._sc_
+
+	rm -r -f "$ENCRYPT_DIR/templates"
+	rm -r -f "$PROJECT_DIR/templates"
+	mkdir "$ENCRYPT_DIR/templates"
+	mkdir "$PROJECT_DIR/templates"
+	
+	cp -R -d "$TEMPLATE_DIR"/. "$ENCRYPT_DIR/templates"
+	
+	# put new files here if we don't want to rebuild templates
+	cp -R -d "$TEMPLATE_DIR"/. "$PROJECT_DIR/templates" 
 fi
-
-# prepare for using local templates
-cd bin
-export TEMPLATE_DIR="$(pwd)"
-
-rm ._sc_ -r -f
-mkdir ._sc_
 
 cd "$ENCRYPT_DIR"
 
-echo Updating the version and encryption key used in export
+echo Updating the version and encryption key used in export configuration files
 
-set -x 
 export CONFIG_FILE="$ENCRYPT_DIR/export_presets.cfg"
 export CRED_FILE="$ENCRYPT_DIR/.godot/export_credentials.cfg"
 export PROJECT_FILE="$ENCRYPT_DIR/project.godot"
 
-# encrypt_pck=true
-sed -i "/^\[preset\.0\]/,/^\[/ s|^encrypt_pck=.*|encrypt_pck=\"true\"|" "$CONFIG_FILE"
-# encrypt_directory=true
-sed -i "/^\[preset\.0\]/,/^\[/ s|^encrypt_directory=.*|encrypt_directory=\"true\"|" "$CONFIG_FILE"
+echo "CONFILE_FILE: $CONFIG_FILE"
+echo "CRED_FILE:    $CRED_FILE"
+echo "PROJECT_FILE: $ENCRYPT_DIR"
 
-#custom_template/debug="/home/ndavie/Documents/Projects/GodotFun/godot/bin/godot.linuxbsd.template_debug.x86_64"
-sed -i "/^\[preset\.0\.options\]/,/^\[/ s|^custom_template/debug=.*|custom_template/debug=\"$TEMPLATE_DIR/godot.linuxbsd.template_debug.x86_64\"|" "$CONFIG_FILE"
-#custom_template/release="/home/ndavie/Documents/Projects/GodotFun/godot/bin/godot.linuxbsd.template_release.x86_64"
-sed -i "/^\[preset\.0\.options\]/,/^\[/ s|^custom_template/release=.*|custom_template/release=\"$TEMPLATE_DIR/godot.linuxbsd.template_release.x86_64\"|" "$CONFIG_FILE"
+# put our date in the version field so we know where to get our keys if we need them in the future
+sed -i "/^\[application\]/,/^\[/ s|^config/version=.*|config/version=\"$DATE\"|" "$PROJECT_FILE"
 
-#binary_format/embed_pck=true
-sed -i "/^\[preset\.0\.options\]/,/^\[/ s|^binary_format/embed_pck=.*|binary_format/embed_pck=\"true\"|" "$CONFIG_FILE"
-
-#script_encryption_key
+# update the encryption key for all presets
 sed -i "/^\[preset\.0]/,/^\[/ s|^script_encryption_key=.*|script_encryption_key=\"$SCRIPT_AES256_ENCRYPTION_KEY\"|" "$CRED_FILE"
 sed -i "/^\[preset\.1]/,/^\[/ s|^script_encryption_key=.*|script_encryption_key=\"$SCRIPT_AES256_ENCRYPTION_KEY\"|" "$CRED_FILE"
 sed -i "/^\[preset\.2]/,/^\[/ s|^script_encryption_key=.*|script_encryption_key=\"$SCRIPT_AES256_ENCRYPTION_KEY\"|" "$CRED_FILE"
 sed -i "/^\[preset\.3]/,/^\[/ s|^script_encryption_key=.*|script_encryption_key=\"$SCRIPT_AES256_ENCRYPTION_KEY\"|" "$CRED_FILE"
 sed -i "/^\[preset\.4]/,/^\[/ s|^script_encryption_key=.*|script_encryption_key=\"$SCRIPT_AES256_ENCRYPTION_KEY\"|" "$CRED_FILE"
 
-sed -i "/^\[application\]/,/^\[/ s|^config/version=.*|config/version=\"$DATE\"|" "$PROJECT_FILE"
+# Linux 
+export OS_Export="Linux"
+"$SCRIPT_DIR/set_entry.sh" "$OS_Export" "encrypt_pck" "true" "$CONFIG_FILE"
+"$SCRIPT_DIR/set_entry.sh" "$OS_Export" "encrypt_directory" "true" "$CONFIG_FILE"
+"$SCRIPT_DIR/set_entry.sh" "$OS_Export" "custom_template/debug" "$LOCAL_TEMPLATES/godot.linuxbsd.template_debug.x86_64" "$CONFIG_FILE"
+"$SCRIPT_DIR/set_entry.sh" "$OS_Export" "custom_template/release" "$LOCAL_TEMPLATES/godot.linuxbsd.template_release.x86_64" "$CONFIG_FILE"
+"$SCRIPT_DIR/set_entry.sh" "$OS_Export" "binary_format/embed_pck" "true" "$CONFIG_FILE"
 
-# Export the exports :-)
-"$TEMPLATE_DIR/godot.linuxbsd.editor.x86_64" --export-release Linux
-"$TEMPLATE_DIR/godot.linuxbsd.editor.x86_64" --export-release "Windows Desktop"
-"$TEMPLATE_DIR/godot.linuxbsd.editor.x86_64" --export-release macOS
+
+# Windows
+export OS_Export="Windows Desktop"
+"$SCRIPT_DIR/set_entry.sh" "$OS_Export" "encrypt_pck" "true" "$CONFIG_FILE"
+"$SCRIPT_DIR/set_entry.sh" "$OS_Export" "encrypt_directory" "true" "$CONFIG_FILE"
+"$SCRIPT_DIR/set_entry.sh" "$OS_Export" "custom_template/debug" "$LOCAL_TEMPLATES/godot.linuxbsd.template_debug.x86_64" "$CONFIG_FILE"
+"$SCRIPT_DIR/set_entry.sh" "$OS_Export" "custom_template/release" "$LOCAL_TEMPLATES/godot.linuxbsd.template_release.x86_64" "$CONFIG_FILE"
+"$SCRIPT_DIR/set_entry.sh" "$OS_Export" "binary_format/embed_pck" "true" "$CONFIG_FILE"
+
+# macOS
+# $OS_Export="macOS"
+export OS_Export="Windows Desktop"
+#"$SCRIPT_DIR/set_entry.sh" "$OS_Export" "encrypt_pck" "true" "$CONFIG_FILE"
+#"$SCRIPT_DIR/set_entry.sh" "$OS_Export" "encrypt_directory" "true" "$CONFIG_FILE"
+#"$SCRIPT_DIR/set_entry.sh" "$OS_Export" "custom_template/debug" "$LOCAL_TEMPLATES/godot.linuxbsd.template_debug.x86_64" "$CONFIG_FILE"
+#"$SCRIPT_DIR/set_entry.sh" "$OS_Export" "custom_template/release" "$LOCAL_TEMPLATES/godot.linuxbsd.template_release.x86_64" "$CONFIG_FILE"
+#"$SCRIPT_DIR/set_entry.sh" "$OS_Export" "binary_format/embed_pck" "true" "$CONFIG_FILE"
+
+
+# install the android templates
+"$LOCAL_TEMPLATES/bin/godot.linuxbsd.editor.x86_64" --headless --editor --install-templates
+
+# Generate a new game using new or existing template files
+"$LOCAL_TEMPLATES/godot.linuxbsd.editor.x86_64" --export-release Linux
+"$LOCAL_TEMPLATES/godot.linuxbsd.editor.x86_64" --export-release "Windows Desktop"
+"$LOCAL_TEMPLATES/godot.linuxbsd.editor.x86_64" --export-release macOS
 
 set +x
 
