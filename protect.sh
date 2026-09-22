@@ -10,7 +10,7 @@ export PROJECT_DIR="$(pwd)"
 echo
 echo Project directory is $PROJECT_DIR
 
-export DATE="$(date '+%Y-%m-%d_%H%M%S')"
+export DATE="$(date '+%Y.%m.%d.%H%M%S')"
 
 export ENCRYPT_DIR="$PROJECT_DIR-$DATE"
 export LOCAL_TEMPLATES="$ENCRYPT_DIR/templates"
