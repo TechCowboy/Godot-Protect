@@ -140,7 +140,3 @@ fi
 
 mv "$TEMP_FILE" "$FILE"
 
-echo "Successfully changed:"
-echo "  Platform: $PLATFORM"
-echo "  Entry:    $ENTRY"
-echo "  Value:    $VALUE"
